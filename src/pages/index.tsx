@@ -1,196 +1,239 @@
-import { type NextPage } from "next";
-import Badge from "../components/Badge";
+import type { NextPage } from "next";
 import DefaultLayout from "../layout/default";
-import React, { useEffect } from "react";
-import type { Message } from "../components/ChatWindow";
-import ChatWindow from "../components/ChatWindow";
-import Drawer from "../components/Drawer";
-import Input from "../components/Input";
-import Button from "../components/Button";
-import { FaRobot, FaStar } from "react-icons/fa";
-import PopIn from "../components/motions/popin";
-import { VscLoading } from "react-icons/vsc";
-import AutonomousAgent from "../components/AutonomousAgent";
-import Expand from "../components/motions/expand";
-import HelpDialog from "../components/HelpDialog";
-import SettingsDialog from "../components/SettingsDialog";
 
 const Home: NextPage = () => {
-  const [name, setName] = React.useState<string>("");
-  const [goalInput, setGoalInput] = React.useState<string>("");
-  const [agent, setAgent] = React.useState<AutonomousAgent | null>(null);
-  const [customApiKey, setCustomApiKey] = React.useState<string>("");
-  const [shouldAgentStop, setShouldAgentStop] = React.useState(false);
-
-  const [messages, setMessages] = React.useState<Message[]>([]);
-
-  const [showHelpDialog, setShowHelpDialog] = React.useState(false);
-  const [showSettingsDialog, setShowSettingsDialog] = React.useState(false);
-
-  useEffect(() => {
-    const key = "agentgpt-modal-opened-new";
-    const savedModalData = localStorage.getItem(key);
-
-    // Momentarily always run
-    setTimeout(() => {
-      if (savedModalData == null) {
-        setShowHelpDialog(true);
-      } else {
-        setShowSettingsDialog(true);
-      }
-    }, 1500);
-
-    localStorage.setItem(key, JSON.stringify(true));
-  }, []);
-
-  useEffect(() => {
-    if (agent == null) {
-      setShouldAgentStop(false);
-    }
-  }, [agent]);
-
-  const handleNewGoal = () => {
-    const addMessage = (message: Message) =>
-      setMessages((prev) => [...prev, message]);
-    const agent = new AutonomousAgent(
-      name,
-      goalInput,
-      addMessage,
-      () => setAgent(null),
-      customApiKey
-    );
-    setAgent(agent);
-    agent.run().then(console.log).catch(console.error);
-  };
-
-  const handleStopAgent = () => {
-    setShouldAgentStop(true);
-    agent?.stopAgent();
-  };
-
   return (
     <DefaultLayout>
-      <HelpDialog
-        show={showHelpDialog}
-        close={() => setShowHelpDialog(false)}
-      />
-      <SettingsDialog
-        customApiKey={customApiKey}
-        setCustomApiKey={setCustomApiKey}
-        show={showSettingsDialog}
-        close={() => setShowSettingsDialog(false)}
-      />
-      <main className="flex h-screen w-screen flex-row">
-        <Drawer
-          showHelp={() => setShowHelpDialog(true)}
-          showSettings={() => setShowSettingsDialog(true)}
-        />
-        <div
-          id="content"
-          className="z-10 flex h-screen w-full items-center justify-center p-2 px-2 sm:px-4 md:px-10"
-        >
-          <div
-            id="layout"
-            className="flex h-full w-full max-w-screen-lg flex-col items-center justify-between gap-3 py-5 md:justify-center"
+      <main className="flex min-h-screen w-full flex-col text-white">
+        <header className="flex w-full items-center justify-between px-6 py-6 md:px-12">
+          <div className="text-lg font-semibold tracking-[0.2em] text-white/80">
+            typesdigital
+          </div>
+          <nav className="hidden items-center gap-8 text-sm font-medium text-white/70 md:flex">
+            <a className="transition hover:text-white" href="#services">
+              Services
+            </a>
+            <a className="transition hover:text-white" href="#work">
+              Work
+            </a>
+            <a className="transition hover:text-white" href="#process">
+              Process
+            </a>
+            <a className="transition hover:text-white" href="#contact">
+              Contact
+            </a>
+          </nav>
+          <a
+            className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white/80 transition hover:border-white hover:text-white"
+            href="#contact"
           >
-            <div
-              id="title"
-              className="relative flex flex-col items-center font-mono"
-            >
-              <div className="flex flex-row items-start shadow-2xl">
-                <span className="text-4xl font-bold text-[#C0C0C0] xs:text-5xl sm:text-6xl">
-                  Agent
-                </span>
-                <span className="text-4xl font-bold text-white xs:text-5xl sm:text-6xl">
-                  GPT
-                </span>
-                <PopIn delay={0.5}>
-                  <Badge>Beta 🚀</Badge>
-                </PopIn>
-              </div>
-              <div className="mt-1 text-center font-mono text-[0.7em] font-bold text-white">
-                <p>
-                  Assemble, configure, and deploy autonomous AI Agents in your
-                  browser.
-                </p>
-                <em>
-                  Please consider sponsoring the project:{" "}
-                  <a
-                    className="text-blue-400"
-                    href={"https://github.com/sponsors/reworkd-admin"}
-                  >
-                    Link
-                  </a>
-                </em>
-              </div>
-            </div>
+            Start a project
+          </a>
+        </header>
 
-            <Expand className="w-full">
-              <ChatWindow className="mt-4" messages={messages} />
-            </Expand>
-
-            <div className="mt-5 flex w-full flex-col gap-2 sm:mt-10">
-              <Input
-                left={
-                  <>
-                    <FaRobot />
-                    <span className="ml-2">Name:</span>
-                  </>
-                }
-                value={name}
-                disabled={agent != null}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="AgentGPT"
-              />
-
-              <Input
-                left={
-                  <>
-                    <FaStar />
-                    <span className="ml-2">Goal:</span>
-                  </>
-                }
-                disabled={agent != null}
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-                placeholder="Make the world a better place."
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                disabled={agent != null || name === "" || goalInput === ""}
-                onClick={handleNewGoal}
-                className="sm:mt-10"
+        <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 pb-16 pt-10 md:flex-row md:items-center md:px-12 md:pt-16">
+          <div className="flex flex-1 flex-col gap-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+              Digital products for ambitious teams
+            </p>
+            <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+              Typesdigital builds tech-forward websites and platforms that move
+              fast, scale clean, and look unforgettable.
+            </h1>
+            <p className="text-base text-white/70 md:text-lg">
+              We are a full-stack digital studio blending strategy, design, and
+              engineering to launch experiences that turn visitors into
+              customers. From MVPs to enterprise rebrands, we make it work.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a
+                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:shadow-xl"
+                href="#contact"
               >
-                {agent == null ? (
-                  "Deploy Agent"
-                ) : (
-                  <>
-                    <VscLoading className="animate-spin" size={20} />
-                    <span className="ml-2">Running</span>
-                  </>
-                )}
-              </Button>
-
-              <Button
-                disabled={agent == null}
-                onClick={handleStopAgent}
-                className="sm:mt-10"
-                enabledClassName={"bg-red-600 hover:bg-red-400"}
+                Book a discovery call
+              </a>
+              <a
+                className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white hover:text-white"
+                href="#services"
               >
-                {shouldAgentStop ? (
-                  <>
-                    <VscLoading className="animate-spin" size={20} />
-                    <span className="ml-2">Stopping</span>
-                  </>
-                ) : (
-                  "Stop agent"
-                )}
-              </Button>
+                Explore services
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-6 text-xs uppercase tracking-[0.25em] text-white/50">
+              <span>Product strategy</span>
+              <span>UX/UI design</span>
+              <span>Web apps</span>
+              <span>Brand systems</span>
             </div>
           </div>
-        </div>
+          <div className="flex flex-1 flex-col gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                  Latest launch
+                </p>
+                <h2 className="text-2xl font-semibold">NeonBridge</h2>
+              </div>
+              <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/70">
+                8 weeks
+              </span>
+            </div>
+            <p className="text-sm text-white/70">
+              A fintech platform rebuilt with realtime dashboards, secure
+              onboarding, and a modular design system to support rapid
+              experimentation.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-xs text-white/60">
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <p className="text-lg font-semibold text-white">+48%</p>
+                <p>Conversion uplift</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <p className="text-lg font-semibold text-white">2.1s</p>
+                <p>Median load time</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <p className="text-lg font-semibold text-white">15</p>
+                <p>Integrations shipped</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <p className="text-lg font-semibold text-white">24/7</p>
+                <p>Monitoring & support</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="services"
+          className="mx-auto grid w-full max-w-6xl gap-6 px-6 pb-20 md:grid-cols-3 md:px-12"
+        >
+          {[
+            {
+              title: "Design systems",
+              body: "Scalable UI kits, component libraries, and brand rules that keep teams aligned.",
+            },
+            {
+              title: "Product engineering",
+              body: "Next.js, Node, and cloud architecture for high-performing web apps.",
+            },
+            {
+              title: "Growth-ready sites",
+              body: "SEO, analytics, and conversion optimization baked into every launch.",
+            },
+          ].map((service) => (
+            <article
+              key={service.title}
+              className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-6"
+            >
+              <h3 className="text-xl font-semibold">{service.title}</h3>
+              <p className="text-sm text-white/70">{service.body}</p>
+              <span className="text-xs uppercase tracking-[0.25em] text-white/40">
+                Learn more →
+              </span>
+            </article>
+          ))}
+        </section>
+
+        <section
+          id="work"
+          className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 pb-20 md:flex-row md:items-center md:px-12"
+        >
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+              Featured work
+            </p>
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              Partnering with teams ready to ship bold ideas.
+            </h2>
+            <p className="text-sm text-white/70">
+              We work with startups, scale-ups, and enterprise innovators to
+              create digital experiences that feel polished and perform.
+            </p>
+          </div>
+          <div className="grid flex-1 gap-4">
+            {[
+              {
+                name: "Lumen Health",
+                detail: "Telehealth experience redesign + HIPAA hosting",
+              },
+              {
+                name: "Atlas Mobility",
+                detail: "Fleet management portal with live tracking",
+              },
+              {
+                name: "PulsePay",
+                detail: "Payments onboarding flow + identity verification",
+              },
+            ].map((project) => (
+              <div
+                key={project.name}
+                className="rounded-2xl border border-white/10 bg-black/40 p-5"
+              >
+                <h3 className="text-lg font-semibold">{project.name}</h3>
+                <p className="text-sm text-white/70">{project.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="process"
+          className="mx-auto grid w-full max-w-6xl gap-6 px-6 pb-20 md:grid-cols-4 md:px-12"
+        >
+          {[
+            "Discovery & roadmap",
+            "Design & prototyping",
+            "Engineering & QA",
+            "Launch & optimization",
+          ].map((step, index) => (
+            <div
+              key={step}
+              className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-6"
+            >
+              <span className="text-xs uppercase tracking-[0.3em] text-white/50">
+                Step {index + 1}
+              </span>
+              <h3 className="text-lg font-semibold">{step}</h3>
+              <p className="text-sm text-white/70">
+                Clear deliverables, tight feedback loops, and momentum from day
+                one.
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section
+          id="contact"
+          className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 pb-24 text-center md:px-12"
+        >
+          <div className="max-w-2xl space-y-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+              Ready to build?
+            </p>
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              Tell us about your product and we will respond within 24 hours.
+            </h2>
+            <p className="text-sm text-white/70">
+              Get a tailored roadmap, timeline, and estimate from the
+              Typesdigital team.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4">
+            <a
+              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:shadow-xl"
+              href="mailto:hello@typesdigital.com"
+            >
+              hello@typesdigital.com
+            </a>
+            <a
+              className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white hover:text-white"
+              href="tel:+15551234567"
+            >
+              +1 (555) 123-4567
+            </a>
+          </div>
+        </section>
       </main>
     </DefaultLayout>
   );
