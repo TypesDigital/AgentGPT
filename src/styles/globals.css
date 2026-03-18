@@ -52,3 +52,12 @@ div::-webkit-scrollbar-thumb {
 div::-webkit-scrollbar-button {
   display: none;
 }
+
+.editor-textarea {
+  resize: vertical;
+}
+
+.editor-textarea::-webkit-scrollbar,
+iframe::-webkit-scrollbar {
+  width: 12px;
+}
