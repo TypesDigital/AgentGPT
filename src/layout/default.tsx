@@ -8,42 +8,18 @@ interface LayoutProps {
 
 const DefaultLayout = (props: LayoutProps) => {
   const description =
-    "Assemble, configure, and deploy autonomous AI Agents in your browser.";
+    "SkyVector 3D is a cinematic live-flight dashboard with regional radar views, estimated routes, and an immersive airspace UI.";
   return (
-    <div className="flex min-h-screen min-h-screen flex-col bg-gradient-to-b from-[#2B2B2B] to-[#1F1F1F]">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.16),_transparent_30%),linear-gradient(180deg,_#07111f_0%,_#030712_40%,_#02030a_100%)]">
       <Head>
-        <title>AgentGPT</title>
+        <title>SkyVector 3D</title>
         <meta name="description" content={description} />
-        <meta name="twitter:site" content="@AgentGPT" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="AgentGPT 🤖" />
+        <meta name="twitter:title" content="SkyVector 3D" />
         <meta name="twitter:description" content={description} />
-        <meta
-          name="twitter:image"
-          content="https://agentgpt.reworkd.ai/banner.png"
-        />
-        <meta name="twitter:image:width" content="1280" />
-        <meta name="twitter:image:height" content="640" />
-        <meta
-          property="og:title"
-          content="AgentGPT: Autonomous AI in your browser 🤖"
-        />
-        <meta
-          property="og:description"
-          content="Assemble, configure, and deploy autonomous AI Agents in your browser."
-        />
-        <meta property="og:url" content="https://agentgpt.reworkd.ai/" />
-        <meta
-          property="og:image"
-          content="https://agentgpt.reworkd.ai/banner.png"
-        />
-        <meta property="og:image:width" content="1280" />
-        <meta property="og:image:height" content="640" />
+        <meta property="og:title" content="SkyVector 3D" />
+        <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
-        <meta
-          name="google-site-verification"
-          content="sG4QDkC8g2oxKSopgJdIe2hQ_SaJDaEaBjwCXZNkNWA"
-        />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <DottedGridBackground>{props.children}</DottedGridBackground>
