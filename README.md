@@ -143,3 +143,24 @@ npx prisma db push
 # Run the project:
 npm run dev
 ```
+
+## ₿ Crypto Tracker Demo
+
+A standalone FastAPI app now lives in `crypto_tracker/` and serves a simple HTML dashboard for BTC and ETH price tracking.
+
+### Features
+
+- FastAPI backend with a background task that fetches Bitcoin and Ethereum prices every 10 seconds.
+- JSON API endpoint at `/api/prices` for the latest prices plus chart history.
+- Minimal HTML dashboard with live summary cards and Chart.js line charts.
+
+### Run the crypto tracker
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn crypto_tracker.app:app --reload
+```
+
+Open `http://127.0.0.1:8000` to view the dashboard.

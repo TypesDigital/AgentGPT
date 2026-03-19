@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crypto Tracker Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07111f;
+        --card: rgba(16, 24, 39, 0.86);
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --btc: #f7931a;
+        --eth: #627eea;
+        --accent: #22c55e;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, rgba(34, 197, 94, 0.16), transparent 30%), var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        width: min(1120px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2rem 0 3rem;
+      }
+
+      .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3rem);
+      }
+
+      .hero p,
+      .meta {
+        color: var(--muted);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card,
+      .chart-card {
+        background: var(--card);
+        border: 1px solid rgba(156, 163, 175, 0.18);
+        border-radius: 18px;
+        padding: 1.25rem;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(18px);
+      }
+
+      .card h2,
+      .chart-card h2 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.15rem;
+      }
+
+      .price {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+      }
+
+      .change {
+        font-size: 0.95rem;
+      }
+
+      .up {
+        color: var(--accent);
+      }
+
+      .down {
+        color: #f87171;
+      }
+
+      .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1rem;
+      }
+
+      canvas {
+        width: 100% !important;
+        height: 320px !important;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.35);
+      }
+
+      .dot {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 999px;
+        background: var(--accent);
+        animation: pulse 1.8s infinite;
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(0.9); opacity: 1; }
+        70% { transform: scale(1.35); opacity: 0.2; }
+        100% { transform: scale(0.9); opacity: 1; }
+      }
+
+      @media (max-width: 640px) {
+        .hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <section class="hero">
+        <div>
+          <p class="meta">Full-stack crypto tracker</p>
+          <h1>BTC & ETH live dashboard</h1>
+          <p>Prices refresh every {{ poll_interval }} seconds from the backend and stream into the charts.</p>
+        </div>
+        <div class="pill"><span class="dot"></span> Auto-refreshing</div>
+      </section>
+
+      <section class="cards">
+        <article class="card">
+          <h2>Bitcoin (BTC)</h2>
+          <div class="price" id="btc-price">--</div>
+          <div class="change" id="btc-change">Waiting for first update...</div>
+        </article>
+        <article class="card">
+          <h2>Ethereum (ETH)</h2>
+          <div class="price" id="eth-price">--</div>
+          <div class="change" id="eth-change">Waiting for first update...</div>
+        </article>
+        <article class="card">
+          <h2>Latest backend sync</h2>
+          <div class="price" id="last-updated">--</div>
+          <div class="meta">Frontend polls the API every {{ poll_interval }} seconds.</div>
+        </article>
+      </section>
+
+      <section class="chart-grid">
+        <article class="chart-card">
+          <h2>Bitcoin price chart</h2>
+          <canvas id="btc-chart"></canvas>
+        </article>
+        <article class="chart-card">
+          <h2>Ethereum price chart</h2>
+          <canvas id="eth-chart"></canvas>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      const POLL_INTERVAL = {{ poll_interval * 1000 }};
+      const currencyFormatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+      });
+
+      const percentFormatter = new Intl.NumberFormat("en-US", {
+        style: "percent",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      function createChart(canvasId, label, color) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        return new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label,
+                data: [],
+                borderColor: color,
+                backgroundColor: color + "33",
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: "#f3f4f6" },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: "#9ca3af" },
+                grid: { color: "rgba(156, 163, 175, 0.1)" },
+              },
+              y: {
+                ticks: {
+                  color: "#9ca3af",
+                  callback: (value) => currencyFormatter.format(value),
+                },
+                grid: { color: "rgba(156, 163, 175, 0.1)" },
+              },
+            },
+          },
+        });
+      }
+
+      const charts = {
+        bitcoin: createChart("btc-chart", "BTC / USD", "#f7931a"),
+        ethereum: createChart("eth-chart", "ETH / USD", "#627eea"),
+      };
+
+      function updateCard(assetId, latest, history) {
+        const prefix = assetId === "bitcoin" ? "btc" : "eth";
+        const priceNode = document.getElementById(`${prefix}-price`);
+        const changeNode = document.getElementById(`${prefix}-change`);
+        if (!latest) {
+          priceNode.textContent = "--";
+          changeNode.textContent = "No data available yet.";
+          changeNode.className = "change";
+          return;
+        }
+
+        priceNode.textContent = currencyFormatter.format(latest.price);
+        if (history.length > 1) {
+          const previous = history[history.length - 2].price;
+          const change = (latest.price - previous) / previous;
+          const directionClass = change >= 0 ? "up" : "down";
+          const directionLabel = change >= 0 ? "up" : "down";
+          changeNode.className = `change ${directionClass}`;
+          changeNode.textContent = `${percentFormatter.format(Math.abs(change))} ${directionLabel} vs previous sample`;
+        } else {
+          changeNode.className = "change";
+          changeNode.textContent = "Collecting history...";
+        }
+      }
+
+      function updateChart(assetId, history) {
+        const chart = charts[assetId];
+        chart.data.labels = history.map((point) =>
+          new Date(point.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        );
+        chart.data.datasets[0].data = history.map((point) => point.price);
+        chart.update();
+      }
+
+      async function refreshDashboard() {
+        const response = await fetch("/api/prices");
+        if (!response.ok) {
+          throw new Error(`Backend returned ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const lastUpdatedNode = document.getElementById("last-updated");
+        lastUpdatedNode.textContent = payload.lastUpdated
+          ? new Date(payload.lastUpdated).toLocaleTimeString()
+          : "Waiting...";
+
+        Object.entries(payload.assets).forEach(([assetId, asset]) => {
+          updateCard(assetId, asset.latest, asset.history);
+          updateChart(assetId, asset.history);
+        });
+      }
+
+      async function boot() {
+        try {
+          await refreshDashboard();
+        } catch (error) {
+          console.error(error);
+          document.getElementById("last-updated").textContent = "API unavailable";
+        }
+
+        setInterval(async () => {
+          try {
+            await refreshDashboard();
+          } catch (error) {
+            console.error(error);
+          }
+        }, POLL_INTERVAL);
+      }
+
+      boot();
+    </script>
+  </body>
+</html>
